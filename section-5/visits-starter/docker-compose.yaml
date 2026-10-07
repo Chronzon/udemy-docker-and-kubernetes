@@ -1,0 +1,12 @@
+---
+services:
+  redis-server:
+    image: redis:alpine
+    container_name: redis-server
+
+  nodejs-app: 
+    build: .
+    container_name: nodejs-app
+    ports:
+      - "4001:8081"
+

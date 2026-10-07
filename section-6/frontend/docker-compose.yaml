@@ -1,0 +1,30 @@
+---
+services:
+  app: 
+    build: 
+      context: .
+      dockerfile: Dockerfile.dev
+
+    image: frontend:v1
+    container_name: frontend
+    ports:
+      - 3000:3000
+    volumes: 
+      - /app/node_modules
+      - .:/app
+
+  app-test:
+    build: 
+      context: .
+      dockerfile: Dockerfile.dev
+
+    image: frontend-test:v1
+    container_name: frontend-test
+    volumes: 
+      - /app/node_modules
+      - .:/app
+
+    command:
+      - npm 
+      - run
+      - test
