@@ -17,13 +17,13 @@ on:
 permissions:
   contents: read
 
-defaults:
-  run:
-    working-directory: ./section-8/fibonacci-app
 
 jobs:
   publish-image-ci:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./section-8/fibonacci-app
 
     steps:
       - name: Checkout code
@@ -56,6 +56,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
       - name: Trigger Coolify Deployment 
         env: 
           COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
