@@ -1,0 +1,76 @@
+name: Section 8-12 CI/CD
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: ./section-8/fibonacci-app
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Build
+        run: |
+          docker build -t fibonacci-app-server:ci ./server
+          docker build -t fibonacci-app-worker:ci ./worker
+          docker build -t fibonacci-app-client:ci ./client
+          docker build -t fibonacci-app-nginx:ci ./nginx
+
+      - name: Cleanup
+        if: always()
+        run: docker compose -f docker-compose.yaml down -v
+
+  publish-image-ci:
+    needs: test-build
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Build and Push Docker Image
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/fibonacci-app-server:${{ github.sha }} ./server
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/fibonacci-app-server:${{ github.sha }}
+
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/fibonacci-app-worker:${{ github.sha }} ./worker
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/fibonacci-app-worker:${{ github.sha }}
+
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/fibonacci-app-client:${{ github.sha }} ./client
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/fibonacci-app-client:${{ github.sha }}
+
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/fibonacci-app-nginx:${{ github.sha }} ./nginx
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/fibonacci-app-nginx:${{ github.sha }}
+
+  deploy-container-cd:
+    needs: publishing-image-ci
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Coolify Deployment 
+        env: 
+          COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+        run: |
+          curl --fail-with-body \
+            -X POST "$COOLIFY_WEBHOOK" \
+            -H "Authorization: Bearer $COOLIFY_TOKEN"
