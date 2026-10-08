@@ -2,9 +2,9 @@
 services: 
 
   nginx:
-    image: ${DOCKERHUB_USERNAME}/fibonacci-app-nginx:${GITHUB_SHA}
-    ports:
-      - 80:80
+    image: ${DOCKERHUB_USERNAME}/fibonacci-app-nginx:latest
+    expose:
+      - 80
     restart: always
     depends_on:
       - client
@@ -23,12 +23,12 @@ services:
     image: redis:6-alpine
 
   api:
-    image: ${DOCKERHUB_USERNAME}/fibonacci-app-server:${GITHUB_SHA}
+    image: ${DOCKERHUB_USERNAME}/fibonacci-app-server:latest
     environment:
-      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_HOST=redis
       - REDIS_PORT=6379
       - PGUSER=${PGUSER}
-      - PGHOST=${PGHOST}
+      - PGHOST=postgres
       - PGDATABASE=${PGDATABASE}
       - PGPASSWORD=${PGPASSWORD}
       - PGPORT=5432
@@ -37,17 +37,15 @@ services:
       - postgres
 
   worker:
-    image: ${DOCKERHUB_USERNAME}/fibonacci-app-worker:${GITHUB_SHA}
+    image: ${DOCKERHUB_USERNAME}/fibonacci-app-worker:latest
     environment:
-      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_HOST=redis
       - REDIS_PORT=6379
     depends_on:
       - redis
 
   client:
-    image: ${DOCKERHUB_USERNAME}/fibonacci-app-client:${GITHUB_SHA}
-    environment:
-      - WDS_SOCKET_PORT=0
+    image: ${DOCKERHUB_USERNAME}/fibonacci-app-client:latest
     depends_on:
       - api
 
