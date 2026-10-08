@@ -1,17 +1,29 @@
 name: Section 8-12 CI/CD
 on:
-  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'section-8/fibonacci-app/**'
+      - '.github/workflows/section-8-12-ci-cd.yaml'
+
+  push:
+    branches:
+      - main
+    paths:
+      - 'section-8/fibonacci-app/**'
+      - '.github/workflows/section-8-12-ci-cd.yaml'
 
 permissions:
   contents: read
 
-defaults:
-  run:
-    working-directory: ./section-8/fibonacci-app
 
 jobs:
   publish-image-ci:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./section-8/fibonacci-app
 
     steps:
       - name: Checkout code
@@ -40,10 +52,13 @@ jobs:
           docker push $DOCKER_USER/fibonacci-app-nginx:latest
 
   deploy-container-cd:
-    needs: publishing-image-ci
+    needs: publish-image-ci
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
       - name: Trigger Coolify Deployment 
         env: 
           COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
