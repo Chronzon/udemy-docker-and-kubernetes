@@ -52,7 +52,7 @@ jobs:
           docker push $DOCKER_USER/fibonacci-app-nginx:latest
 
   deploy-container-cd:
-    needs: publishing-image-ci
+    needs: publish-image-ci
     runs-on: ubuntu-latest
 
     steps:
