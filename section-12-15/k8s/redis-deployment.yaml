@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fibonacci-redis-deployment
+  namespace: fibonacci-namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:6
+        imagePullPolicy: Always
+
+        ports:
+        - name: redis-port
+          containerPort: 6379
+
+        resources:
+          requests:
+            memory: 32Mi
+            cpu: 50m
+          limits:
+            memory: 64Mi
+            cpu: 100m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fibonacci-redis-service
+  namespace: fibonacci-namespace
+spec:
+  type: ClusterIP
+  selector:
+    app: redis
+  ports:
+    - name: redis-port
+      port: 6379
+      targetPort: redis-port

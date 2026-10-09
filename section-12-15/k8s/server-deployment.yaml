@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fibonacci-server-deployment
+  namespace: fibonacci-namespace
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: server
+  template:
+    metadata:
+      labels:
+        app: server
+    spec:
+      containers:
+      - name: server
+        image: chronzon/fibonacci-app-server:latest
+        imagePullPolicy: Always
+
+        envFrom:
+        - configMapRef:
+            name: fibonacci-conf
+
+        env: 
+        - name: PGPASSWORD
+          secretKeyRef:
+            name: postgres-auth
+            key: password
+
+        ports:
+        - name: server-port
+          containerPort: 5000
+
+        resources:
+          requests:
+            memory: 32Mi
+            cpu: 50m
+          limits:
+            memory: 64Mi
+            cpu: 100m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fibonacci-server-service
+  namespace: fibonacci-namespace
+spec:
+  type: ClusterIP
+  selector:
+    app: server
+  ports:
+    - name: server-port
+      port: 5000
+      targetPort: server-port
