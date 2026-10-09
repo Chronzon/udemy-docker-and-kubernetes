@@ -1,0 +1,21 @@
+providers: 
+  kubernetesIngress: 
+    enabled: true
+  kubernetesCRD:
+    enabled: true
+  kubernetesGateway:
+    enabled: false
+
+gateway: 
+  enabled: false
+
+gatewayClass: 
+  enabled: false
+
+ingressClass: 
+  enabled: true
+  isDefaultClass: false
+
+service: 
+  spec: 
+    type: ClusterIP 

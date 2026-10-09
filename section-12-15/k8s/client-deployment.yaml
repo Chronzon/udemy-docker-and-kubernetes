@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fibonacci-client-deployment
+  namespace: fibonacci-namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client
+  template:
+    metadata:
+      labels:
+        app: client
+    spec:
+      containers:
+      - name: client
+        image: chronzon/fibonacci-app-client:latest
+        imagePullPolicy: Always
+
+        ports:
+        - name: client-port
+          containerPort: 3000
+
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fibonacci-client-service
+  namespace: fibonacci-namespace
+spec:
+  type: ClusterIP
+  selector:
+    app: client
+  ports:
+    - name: client-port
+      port: 3000
+      targetPort: client-port
+
+

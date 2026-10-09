@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fibonacci-conf
+  namespace: fibonacci-namespace
+data:
+  REDIS_HOST: fibonacci-redis-service
+  REDIS_PORT: "6379"
+  PGHOST: postgres-service
+  PGPORT: "5432"
+  PGUSER: fibonacci
+  PGDATABASE: fibonacci
