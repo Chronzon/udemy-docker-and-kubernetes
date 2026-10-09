@@ -4,7 +4,7 @@ metadata:
   name: fibonacci-server-deployment
   namespace: fibonacci-namespace
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: server
@@ -18,11 +18,16 @@ spec:
         image: chronzon/fibonacci-app-server:latest
         imagePullPolicy: Always
 
+        command: ["node", "index.js"]
+
         envFrom:
         - configMapRef:
             name: fibonacci-conf
 
         env: 
+        - name: NODE_ENV
+          value: "development"
+          
         - name: PGPASSWORD
           valueFrom:
             secretKeyRef:
@@ -35,11 +40,11 @@ spec:
 
         resources:
           requests:
-            memory: 32Mi
-            cpu: 50m
-          limits:
-            memory: 64Mi
+            memory: 128Mi
             cpu: 100m
+          limits:
+            memory: 256Mi
+            cpu: 250m
 ---
 apiVersion: v1
 kind: Service

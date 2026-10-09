@@ -33,6 +33,11 @@ spec:
             configMapKeyRef: 
               name: fibonacci-conf
               key: PGDATABASE
+        - name: POSTGRES_USER
+          valueFrom: 
+            configMapKeyRef:
+              name: fibonacci-conf
+              key: PGUSER
 
         volumeMounts:
           - name: postgres-data
