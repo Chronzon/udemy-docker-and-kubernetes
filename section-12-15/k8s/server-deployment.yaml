@@ -18,16 +18,11 @@ spec:
         image: chronzon/fibonacci-app-server:latest
         imagePullPolicy: Always
 
-        command: ["node", "index.js"]
-
         envFrom:
         - configMapRef:
             name: fibonacci-conf
 
         env: 
-        - name: NODE_ENV
-          value: "development"
-          
         - name: PGPASSWORD
           valueFrom:
             secretKeyRef:
