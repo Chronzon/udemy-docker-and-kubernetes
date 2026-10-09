@@ -24,9 +24,10 @@ spec:
 
         env: 
         - name: PGPASSWORD
-          secretKeyRef:
-            name: postgres-auth
-            key: password
+          valueFrom:
+            secretKeyRef:
+              name: postgres-auth
+              key: password
 
         ports:
         - name: server-port

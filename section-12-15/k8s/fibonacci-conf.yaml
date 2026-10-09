@@ -6,7 +6,7 @@ metadata:
 data:
   REDIS_HOST: fibonacci-redis-service
   REDIS_PORT: "6379"
-  POSTGRES_HOST: fibonacci-postgres-service
-  POSTGRES_PORT: "5432"
-  POSTGRES_DB: fibonacci
-  POSTGRES_USER: postgres
+  PGHOST: fibonacci-postgres-service
+  PGPORT: "5432"
+  PGUSER: fibonacci
+  PGDATABASE: fibonacci
