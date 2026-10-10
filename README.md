@@ -14,7 +14,8 @@ Detailed notes live in each section's README:
 | `section-5` | Node.js + Redis visit counter | [Compose, port mapping, and dependency errors](section-5/README.md) |
 | `section-6` | React frontend with CRA and a Vite alternative | [Development, testing, volumes, and multi-stage builds](section-6/README.md) |
 | `section-7` | Frontend CI/CD exercises | [Git and GitHub Actions in a multi-section repository](section-7/README.md) |
-| `section-8` | Multi-container Fibonacci application | [Networking, environment variables, volumes, and two Nginx containers](section-8/README.md) |
+| `section-8` | Completed Docker Fibonacci application and Coolify CI/CD | [Architecture, deployment, verification, and troubleshooting](section-8/README.md) |
+| `section-12-15` | Completed local Kubernetes Fibonacci lab | [kind, manifests, Helm, Traefik, storage, and verification](section-12-15/README.md) |
 
 Folders reflect the exercises rather than a strict one-folder-per-course-section layout. The Fibonacci project in section 8 also contains work related to later course sections.
 
@@ -50,19 +51,18 @@ Install Docker Engine and Docker Compose v2, for example through Docker Desktop.
 
 ```bash
 cd section-8/fibonacci-app
-docker compose up --build
+docker compose -f docker-compose-dev.yaml up --build
 ```
 
 The current Fibonacci development stack is available at **http://localhost:8888**. See the section README for configuration details.
 
-```bash
-docker compose up -d       # Run in the background
-docker compose ps         # Inspect service status
-docker compose logs api   # Inspect application logs
-docker compose down       # Remove the stack's containers and network
-```
+## Learning objectives and progress
 
-Named volumes survive `docker compose down`. Adding `-v` removes Compose-managed volumes, including database data; use it only when intentionally resetting the exercise.
+Practice image builds, multi-stage packaging, service networking, persistent data, CI/CD, and Kubernetes orchestration. Technologies covered include Docker/Compose, React, Express/Node.js, PostgreSQL, Redis Pub/Sub, Nginx, Docker Hub, GitHub Actions, Coolify, kind, Kubernetes, Helm, and Traefik.
+
+- **Completed:** Docker Fibonacci stack, image publishing and Coolify deployment, including the PostgreSQL history connection fix.
+- **Completed:** local Kubernetes lab with Services, configuration, Secret references, PostgreSQL PVC, and Traefik routing installed through Helm.
+- **Evidence:** section READMEs contain captured deployment status, resource checks, HTTP responses, and application results. Later course topics remain on the roadmap; completion of the lab does not imply completion of every course section or an AWS deployment.
 
 ## Learning environment
 

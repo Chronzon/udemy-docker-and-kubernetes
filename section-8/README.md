@@ -48,11 +48,34 @@ Coolify records a successful deployment and shows the application as running. Th
 
 ### 3. Fibonacci application in the browser
 
-The deployed frontend is accessible at the configured domain and displays the calculated result **17711 for index 21**.
+After the PostgreSQL connection fix and redeployment, the frontend displays submitted history **12, 25** and calculated results **233 for index 12** and **121393 for index 25**. This capture verifies both the PostgreSQL-backed history and Redis-backed calculated values.
 
-![Deployed Fibonacci application displaying the calculated value 17711 for index 21](../docs/images/section-8-12/fibonacci-app.png)
+![Redeployed Coolify application showing PostgreSQL history and Fibonacci calculations](../docs/images/section-8-12/fibonacci-app-fixed.png)
+
+The earlier `fibonacci-app.png` capture showed a calculation but no history; it is preserved as an original screenshot, not used as proof of the completed database fix.
 
 These screenshots record the result at the time of capture; they are not a live availability monitor or a complete test of every application route.
+
+## Application responsibilities and data flow
+
+| Component | Responsibility |
+| --- | --- |
+| React client | Requests history and results through `/api`, and posts submitted indexes. |
+| Express API | Reads/writes PostgreSQL history, reads Redis results, and publishes calculation requests. |
+| PostgreSQL | Persists submitted indexes in the `values` table. |
+| Redis | Stores the `values` hash and carries Pub/Sub messages on channel `insert`. |
+| Worker | Subscribes to `insert`, calculates Fibonacci values, and writes results back to Redis. |
+| Main Nginx | Routes browser requests to the client or API, stripping `/api` for Express. |
+
+The [API source](fibonacci-app/server/index.js) exposes `/values/all` for database history, `/values/current` for Redis values, and POST `/values` for submissions. The [worker](fibonacci-app/worker/index.js) receives Pub/Sub messages rather than HTTP requests. The [frontend](fibonacci-app/client/src/Fib.js) fetches history and results on mount: after submitting, wait for calculation and reload to see updated data.
+
+The worker uses the course's convention `fib(0) = fib(1) = 1`; the API rejects indexes above 40. This explains the results shown in the screenshots.
+
+### PostgreSQL history fix
+
+The application originally displayed Redis calculations while PostgreSQL history failed. The Node PostgreSQL client forced SSL when `NODE_ENV=production`, but the lab database did not provide that connection setup. The fix removed the forced SSL options from Section 8's `pg.Pool` configuration. The image was rebuilt and redeployed through Coolify, and the corrected screenshot above shows both history and calculations.
+
+This was an application connection issue, not a React rendering or Nginx routing fix. The same corrected server image is reused in the [Kubernetes lab](../section-12-15/README.md). Configure TLS according to the actual database environment for public deployments; removing forced SSL is not a general recommendation to disable database transport security.
 
 ## Why production uses two Nginx containers
 
@@ -86,6 +109,12 @@ try_files $uri $uri/ /index.html;
 That fallback lets React handle direct requests or refreshes for routes such as `/otherpage` instead of returning a file-not-found response.
 
 The main proxy and static client configs belong in different folders. With build context `./client`, `COPY ./nginx/default.conf ...` reads `client/nginx/default.conf`, not the sibling project's `nginx/default.conf`.
+
+## Docker builds
+
+The production client Dockerfile has two stages: Node 14 builds React into `/app/build`, then Nginx receives the generated static files and client config. Node and the builder's dependencies are absent from the final image. Server and worker production Dockerfiles are single-stage Node images; the main proxy is a single-stage Nginx image with copied config.
+
+Development Dockerfiles run the React dev server or Nodemon instead. All Dockerfile `COPY` paths are relative to the service build context; separate service folders are built independently by the workflow.
 
 ## Nginx images and volumes
 
@@ -177,6 +206,8 @@ The prefix can change through `docker compose -p`, `COMPOSE_PROJECT_NAME`, or to
 
 Each Node service uses its own dependency volume so a source bind mount does not replace the container's `node_modules`. Postgres uses a persistent data volume.
 
+Redis has no persistent volume in either Compose file; cached results and Pub/Sub are not a durable job queue.
+
 Renaming a volume does not move its contents; the old volume remains separate. Dependency volumes can retain packages across image rebuilds. When troubleshooting them, distinguish dependency cleanup from deleting persistent database data.
 
 ## Deployment configuration
@@ -188,4 +219,25 @@ The default [docker-compose.yaml](fibonacci-app/docker-compose.yaml) references 
 
 The corresponding database values must match. Redis and Postgres remain internal services. Nginx declares `expose: 80`, which does not publish a host port; browser access is provided by the hosting configuration.
 
-Production uses image contents rather than development source or dependency mounts, and retains the Postgres data volume. The screenshots above document a successful Coolify deployment and a visible calculation result. Changes to the images, database settings, or hosting configuration still need their own runtime verification.
+Production uses image contents rather than development source or dependency mounts, and retains the Postgres data volume. Coolify supplies the domain routing to this internal Nginx endpoint. The screenshots above document the workflow trigger, deployment status, and successful history plus calculation result. A successful webhook response alone does not verify application readiness; check the deployment and endpoints afterward. Changes to the images, database settings, or hosting configuration still need their own runtime verification.
+
+## Verification and common troubleshooting
+
+From `fibonacci-app`, while the development stack is running:
+
+```bash
+docker compose -f docker-compose-dev.yaml ps
+docker compose -f docker-compose-dev.yaml logs api worker postgres
+curl -i http://localhost:8888/api/values/all
+curl -i http://localhost:8888/api/values/current
+```
+
+For Coolify, check deployment logs and the same paths under its configured application domain. Submit an index, wait for the worker, and reload the client to verify both history and results.
+
+- An `Exited (1)` container needs log diagnosis; detached mode does not fix a crash.
+- `depends_on` orders startup, not database readiness. Running containers still require endpoint verification.
+- Environment variable names follow the reader: Postgres uses `POSTGRES_*`, while the API uses `PG*`. Match the database's actual persisted credentials.
+- Image rebuilds do not automatically refresh existing dependency volumes. Keep dependency cleanup separate from persistent database data.
+- A refreshed React route needs the client's `try_files` fallback.
+
+This completed Docker/Coolify exercise remains a learning deployment. The workflow uses mutable `latest` tags and has no separate automated test job. Its current pull-request trigger also reaches the publishing/deployment jobs when credentials are available; it is not a main-only deployment gate. Public production use requires a separate review of dependencies, runtime support, secrets, readiness, and release controls.
